@@ -86,16 +86,28 @@ def three_array_max(array_list: List[np.ndarray]) -> np.ndarray:
 
     return all_maxs
 
-def find_intersections() -> np.ndarray:
+def find_intersections(
+    z1: np.ndarray, z2: np.ndarray, z3: np.ndarray) -> np.ndarray:
     """
     Finds the points of intersection between the arrays.
 
-    Will need to work on this, could be tricky.
+    Returns x, y coords of intersection points of surfaces. 
     """
-    pass
+    # Intersections between the surfaces will be where x, y, and z are 
+    # all equivalent between surfaces. Because x, y are set, only need 
+    # to compare z values, then can find x and y values from there. 
+    
+    # Where do surfaces intersect above the not included surface?
+    z1_z2 = np.argwhere((np.absolute(z1 - z2) < 0.001) & (z1 > z3))
+    z2_z3 = np.argwhere((np.absolute(z2 - z3) < 0.001) & (z2 > z1))
+    z3_z1 = np.argwhere((np.absolute(z3 - z1) < 0.001) & (z3 > z2))
+
+    coords = np.concatenate((z1_z2, z2_z3, z3_z1), axis = 0)
+
+    return coords
 
 def make_plot(X: np.ndarray, Y: np.ndarray, Z: np.ndarray, 
-    levels: np.ndarray, color_range: List[str]):
+    int_points: np.ndarray, levels: np.ndarray, color_range: List[str]):
     """
     Create deformation mechanism map.
 
@@ -108,6 +120,12 @@ def make_plot(X: np.ndarray, Y: np.ndarray, Z: np.ndarray,
     color1 = Color(color_range[0])
     color2 = Color(color_range[1])
     
+    # Flatten intersection array ! INDEXES not VALUES!
+    # NEEDS TO BE VALUES BEFORE PLOTTING
+    x_ind, y_ind = int_points.T
+    x_coord = X[x_ind]
+    y_coord = Y[y_ind]
+
     # List of Color objects, need to convert for matplotlib
     color_list = list(color1.range_to(color2, len(levels)))
     
@@ -122,6 +140,8 @@ def make_plot(X: np.ndarray, Y: np.ndarray, Z: np.ndarray,
     
     CS = ax1.contour(X, Y, Z, levels, colors = contour_colors) 
     
+    ax1.scatter(x_coord, y_coord)
+
     # Labels... hardcoded. May find a way to make this generic
     sr_labels = [
         r'$10^{-15}$', r'$10^{-14}$', r'$10^{-13}$', 
@@ -152,9 +172,13 @@ def make_plot(X: np.ndarray, Y: np.ndarray, Z: np.ndarray,
     plt.show()
 
 if __name__ == "__main__":
+    # X and Y level precision
+    n_grid = 1000
+    # I wouldn't set this much higher than 5000 for now
+
     # Using np.meshgrid for speed
-    x_values = np.linspace(0.2, 1.0, 1000)
-    y_values = np.geomspace(1, 10 ** -6, 1000)
+    x_values = np.linspace(0.2, 1.0, n_grid)
+    y_values = np.geomspace(1, 10 ** -6, n_grid)
 
     # Specify contour levels
     strain_levels = np.geomspace(10 ** -15, 10 ** -6, 10)
@@ -171,8 +195,14 @@ if __name__ == "__main__":
     # Take highest surface (z) values
     max_strain_rates = three_array_max([sr_dc, sr_nh, sr_cc])
 
+    int_coords = find_intersections(sr_dc, sr_nh, sr_cc)
+
+    # print(int_coords)
+
     # Set plotting color range
     colors = ['blue', 'yellow']
 
     # Make the plot
-    make_plot(ht_x, n_ss_y, max_strain_rates, strain_levels, colors)
+    make_plot(
+        ht_x, n_ss_y, max_strain_rates, 
+        int_coords, strain_levels, colors)
