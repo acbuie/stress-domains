@@ -87,7 +87,8 @@ def three_array_max(array_list: List[np.ndarray]) -> np.ndarray:
     return all_maxs
 
 def find_intersections(
-    z1: np.ndarray, z2: np.ndarray, z3: np.ndarray) -> np.ndarray:
+    z1: np.ndarray, z2: np.ndarray, z3: np.ndarray, 
+    threshold: float) -> List[np.ndarray]:
     """
     Finds the points of intersection between the arrays.
 
@@ -98,16 +99,23 @@ def find_intersections(
     # to compare z values, then can find x and y values from there. 
     
     # Where do surfaces intersect above the not included surface?
-    z1_z2 = np.argwhere((np.absolute(z1 - z2) < 0.001) & (z1 > z3))
-    z2_z3 = np.argwhere((np.absolute(z2 - z3) < 0.001) & (z2 > z1))
-    z3_z1 = np.argwhere((np.absolute(z3 - z1) < 0.001) & (z3 > z2))
+    
+    
+    z1_z2 = np.argwhere(
+        (np.absolute(z1 - z2) < z1 * threshold) & (z1 > z3))
+    z2_z3 = np.argwhere(
+        (np.absolute(z2 - z3) < z2 * threshold) & (z2 > z1))
+    z3_z1 = np.argwhere(
+        (np.absolute(z3 - z1) < z3 * threshold) & (z3 > z2))
 
-    coords = np.concatenate((z1_z2, z2_z3, z3_z1), axis = 0)
+    # coords = np.concatenate((z1_z2, z2_z3, z3_z1), axis = 0)
 
-    return coords
+    return [z1_z2, z2_z3, z3_z1]
 
-def make_plot(X: np.ndarray, Y: np.ndarray, Z: np.ndarray, 
-    int_points: np.ndarray, levels: np.ndarray, color_range: List[str]):
+def make_plot(
+    X: np.ndarray, Y: np.ndarray, Z: np.ndarray, 
+    int_coords: List[np.ndarray], levels: np.ndarray, 
+    color_range: List[str]):
     """
     Create deformation mechanism map.
 
@@ -120,12 +128,6 @@ def make_plot(X: np.ndarray, Y: np.ndarray, Z: np.ndarray,
     color1 = Color(color_range[0])
     color2 = Color(color_range[1])
     
-    # Flatten intersection array ! INDEXES not VALUES!
-    # NEEDS TO BE VALUES BEFORE PLOTTING
-    x_ind, y_ind = int_points.T
-    x_coord = X[x_ind]
-    y_coord = Y[y_ind]
-
     # List of Color objects, need to convert for matplotlib
     color_list = list(color1.range_to(color2, len(levels)))
     
@@ -140,7 +142,14 @@ def make_plot(X: np.ndarray, Y: np.ndarray, Z: np.ndarray,
     
     CS = ax1.contour(X, Y, Z, levels, colors = contour_colors) 
     
-    ax1.scatter(x_coord, y_coord)
+    for coord_arr in int_coords:
+        x, y = coord_arr.T
+        
+        # Get actual points to plot
+        points_x = X[x, y]
+        points_y = Y[x, y]
+
+        ax1.plot(points_x, points_y, color = 'black')
 
     # Labels... hardcoded. May find a way to make this generic
     sr_labels = [
@@ -195,9 +204,7 @@ if __name__ == "__main__":
     # Take highest surface (z) values
     max_strain_rates = three_array_max([sr_dc, sr_nh, sr_cc])
 
-    int_coords = find_intersections(sr_dc, sr_nh, sr_cc)
-
-    # print(int_coords)
+    int_coords = find_intersections(sr_dc, sr_nh, sr_cc, 0.01)
 
     # Set plotting color range
     colors = ['blue', 'yellow']
