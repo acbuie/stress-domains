@@ -176,6 +176,9 @@ def make_plot(
         r'Homologous Temperature $\left( \frac{T}{T_m} \right)$'
     )
 
+    # Plot tick marks
+    ax1.grid()
+
     if SAVE:
         fig.savefig(SAVE_NAME)
     else:
