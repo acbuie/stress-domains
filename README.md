@@ -1,12 +1,12 @@
 # stress-domains
 
-Construct a deformation mechanism map for quartz with the following constitutive equations (from Passchier and Trouw, 1996).  The x-axis should be homologous temperatures from 0.2 to 1.0 and the y-axis log10($\sigma$/$\mu$) fromm 0 to -6.  Plot strain rate contours 10^-6 through 10^-15. 
+Construct a deformation mechanism map for quartz with the following constitutive equations (from Passchier and Trouw, 1996). The x-axis should be homologous temperatures from 0.2 to 1.0, and the y-axis normalized shear stress log10(sigma/mu) from 0 to -6.  Plot strain rate contours 10^-6 through 10^-15. 
 
 ## Usage
 
 ### Set Up Environment
 
-### Clone Repository
+#### Clone Repository
 
 The following will create a directory called `stress-domains` in the current working directory.
 
@@ -14,7 +14,7 @@ The following will create a directory called `stress-domains` in the current wor
 $ git clone https://github.com/acbuie/stress-domains.git
 ```
 
-### Create Virtual Environment
+#### Create Virtual Environment
 
 Navigate to directory where you cloned the repository. 
 
@@ -27,7 +27,7 @@ $ pip3 install -r requirements.txt
 
 For more information, see: https://docs.python.org/3/library/venv.html
 
-## Creating the Plot
+### Creating the Plot
 
 Edit the plot config with: 
 
