@@ -10,7 +10,6 @@ from matplotlib import cm
 
 import numpy as np
 from numpy import typing
-import pandas as pd
 
 from colour import Color
 
