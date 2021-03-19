@@ -13,10 +13,11 @@ from numpy import typing
 
 from colour import Color
 
-from typing import List
+from typing import List, Union
 
-# Import constants
+# Import constants and parameters
 from constants import *
+from parameters import *
 
 def dislocation_creep(
     temperature: np.ndarray, n_shear_stress: np.ndarray) -> np.ndarray:
@@ -107,23 +108,16 @@ def find_intersections(
     z3_z1 = np.argwhere(
         (np.absolute(z3 - z1) < z3 * threshold) & (z3 > z2))
 
-    # coords = np.concatenate((z1_z2, z2_z3, z3_z1), axis = 0)
-
     return [z1_z2, z2_z3, z3_z1]
 
 def make_plot(
     X: np.ndarray, Y: np.ndarray, Z: np.ndarray, 
     int_coords: List[np.ndarray], levels: np.ndarray, 
-    color_range: List[str]):
+    color_range: List[str], inter_color: List[Union[str, float]], 
+    SAVE: bool, SAVE_NAME: str):
     """
     Create deformation mechanism map.
-
-    X and Y inputs are xx and yy from np.meshgrid(x, y)
-    Z input is any value calculated across xx and yy. 
-    Contours will be at the levels specified, and colors will be 
-    selected from two colors in color_range.
     """
-
     color1 = Color(color_range[0])
     color2 = Color(color_range[1])
     
@@ -134,21 +128,25 @@ def make_plot(
     for color in color_list:
         contour_colors.append(color.hex)
 
-    fig = plt.figure()
+    fig = plt.figure(figsize = [8, 6])
     ax1 = fig.add_subplot(111)
 
+    # Set title
     fig.suptitle('Quartz Deformation Mechanism Map')
     
     CS = ax1.contour(X, Y, Z, levels, colors = contour_colors) 
     
+    # Add intersection lines to plot
     for coord_arr in int_coords:
+        # Get x indices and y indices
         x, y = coord_arr.T
         
         # Get actual points to plot
         points_x = X[x, y]
         points_y = Y[x, y]
 
-        ax1.plot(points_x, points_y, color = 'black')
+        ax1.plot(points_x, points_y, 
+            color = inter_color[0], alpha = inter_color[1])
 
     # Labels... hardcoded. May find a way to make this generic
     sr_labels = [
@@ -157,6 +155,7 @@ def make_plot(
         r'$10^{-9}$', r'$10^{-8}$', r'$10^{-7}$', 
         r'$10^{-6}$']
 
+    # Make legend equal to contour values from sr_labels
     for i in range(len(sr_labels)):
         CS.collections[i].set_label(sr_labels[i])
 
@@ -177,18 +176,16 @@ def make_plot(
         r'Homologous Temperature $\left( \frac{T}{T_m} \right)$'
     )
 
-    plt.show()
+    if SAVE:
+        fig.savefig(SAVE_NAME)
+    else:
+        plt.show()
 
 if __name__ == "__main__":
-    # X and Y level precision
-    n_grid = 1000
-    # I wouldn't set this much higher than 5000 for now
+    x_values = np.linspace(0.2, 1.0, N)
+    y_values = np.geomspace(1, 10 ** -6, N)
 
-    # Using np.meshgrid for speed
-    x_values = np.linspace(0.2, 1.0, n_grid)
-    y_values = np.geomspace(1, 10 ** -6, n_grid)
-
-    # Specify contour levels
+    # Specify contour levels, may try to make this user definable
     strain_levels = np.geomspace(10 ** -15, 10 ** -6, 10)
 
     # Make coordinate values
@@ -205,10 +202,11 @@ if __name__ == "__main__":
 
     int_coords = find_intersections(sr_dc, sr_nh, sr_cc, 0.01)
 
-    # Set plotting color range
-    colors = ['blue', 'yellow']
-
     # Make the plot
     make_plot(
         ht_x, n_ss_y, max_strain_rates, 
-        int_coords, strain_levels, colors)
+        int_coords, 
+        strain_levels, 
+        CONTOUR_COLORS, 
+        INTERSECTION_COLOR,
+        SAVE, SAVE_NAME)
